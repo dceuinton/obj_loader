@@ -6,6 +6,12 @@ void printVec(vector<glm::vec3> &vec) {
 	}
 }
 
+void printVec(vector<glm::vec2> &vec) {
+	for (auto v : vec) {
+		cout << glm::to_string(v) << endl;
+	}
+}
+
 void printVec(vector<string> &vec) {
 	for (auto v : vec) {
 		cout << v << endl;
@@ -185,5 +191,29 @@ void getFaceIndices(vector<string> &faceWords, vector<GLuint> &vIndices, vector<
 				vTexCoords.push_back(face[i][1] - 1);
 				vNormals.push_back(face[i][2] - 1);
 		}
+	}
+}
+
+void sortVerticesTCsAndNormals(vector<GLfloat> &output, vector<glm::vec3> &vertices, vector<glm::vec2> &texcoords, vector<glm::vec3> &normals,
+								vector<GLuint> &vIndices, vector<GLuint> &tcIndices, vector<GLuint> &nIndices) {
+	if (vIndices.size() != tcIndices.size() || vIndices.size() != nIndices.size() || nIndices.size() != tcIndices.size()) {
+		cout << "Failed to sort as the indices vectors are different sizes." << endl;
+		return;
+	}
+
+	for (int i = 0; i < vIndices.size(); i++) {
+
+		// cout << i << endl;
+		// cout << vIndices[i] << endl;
+		output.push_back(vertices[vIndices[i]].x);
+		output.push_back(vertices[vIndices[i]].y);
+		output.push_back(vertices[vIndices[i]].z);
+
+		output.push_back(texcoords[tcIndices[i]].x);
+		output.push_back(texcoords[tcIndices[i]].y);
+
+		output.push_back(normals[nIndices[i]].x);
+		output.push_back(normals[nIndices[i]].y);
+		output.push_back(normals[nIndices[i]].z);	
 	}
 }

@@ -86,14 +86,15 @@ int main() {
 	stringstream *file = readFileIntoBuffer(filename);
 	
 	string line;
-	vector<glm::vec3> vertices;
+	vector<glm::vec3> vertices, normals;
+	vector<glm::vec2> texturecoords;
 	vector<GLuint> indices, vTC, vNormals;
 
 
-	ofstream vertexFile;
-	vertexFile.open("verticesRecord.txt", std::ofstream::trunc);
-	vertexFile.close();
-	vertexFile.open("verticesRecord.txt", std::ofstream::out | std::ofstream::app);
+	// ofstream vertexFile;
+	// vertexFile.open("verticesRecord.txt", std::ofstream::trunc);
+	// vertexFile.close();
+	// vertexFile.open("verticesRecord.txt", std::ofstream::out | std::ofstream::app);
 
 	int coms=0, gs=0, vs=0, vts=0, vns=0, sgs=0, fs=0, mtl=0, usemtls=0, unknown=0;
 
@@ -126,23 +127,33 @@ int main() {
 				glm::vec3 vec;
 				vec = getVertex(line);
 				
-				vertexFile << glm::to_string(vec) << "\n";
+				// vertexFile << glm::to_string(vec) << "\n";
 				
 				vertices.push_back(vec);
 				// printVec(vertices);
 				break;
 			}					
 
-			case TEX_COORD:
-			vts++;
-			break;
+			case TEX_COORD: {
+				vts++;
+				glm::vec2 vec;
+				vec = getTexCoords(line);
+				texturecoords.push_back(vec);
+				break;
+			}
+			
 
-			case NORMAL:
-			vns++;
-			break;
+			case NORMAL: {
+				vns++;
+				glm::vec3 vec;
+				vec = getVertex(line);
+				normals.push_back(vec); 
+				break;
+			}
+			
 
 			case FACE: {
-				// fs++;
+				fs++;
 				vector<string> vec = getWords(line);
 				// // printVec(vec);
 				getFaceIndices(vec, indices, vTC, vNormals);
@@ -162,7 +173,7 @@ int main() {
 			break;
 		}
 	}
-	vertexFile.close();
+	// vertexFile.close();
 
 	cout << "Comments: " << coms << endl;
 	cout << "Groups: " << gs << endl;
@@ -181,21 +192,28 @@ int main() {
 	cout << "vTexCoords Size: " << vTC.size() <<endl;
 	cout << "vNormals Size: " << vNormals.size() <<endl;
 
-	cout << "Loop started" << endl;
-	for (auto v: vertices) {
-		if (v.y < 5.0f) {
-			cout << v.y << endl;
-		}
-	}
-	cout << "Loop finished" << endl;
+	// printVec(texturecoords);
 
-	vector<GLuint> indicesTest(indices.size());
+	// cout << "Loop started" << endl;
+	// for (auto v: vertices) {
+	// 	if (v.y < 5.0f) {
+	// 		cout << v.y << endl;
+	// 	}
+	// }
+	// cout << "Loop finished" << endl;
 
-	indicesTest.at(0) = (indices[0]);
-	indicesTest.at(1) = (indices[1]);
-	indicesTest.at(2) = (indices[2]);
+	// vector<GLuint> indicesTest(indices.size());
+
+	// indicesTest.at(0) = (indices[0]);
+	// indicesTest.at(1) = (indices[1]);
+	// indicesTest.at(2) = (indices[2]);
 
 	// printVec(vertices);
+
+	vector<GLfloat> fullVertices;
+	// printVec(indices);
+
+	sortVerticesTCsAndNormals(fullVertices, vertices, texturecoords, normals, indices, vTC, vNormals);
 
 	glfwSetErrorCallback(onError);
 
@@ -250,8 +268,8 @@ int main() {
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
 	// glBufferData(GL_ARRAY_BUFFER, testArraySize * sizeof(GLfloat), triangle, GL_STATIC_DRAW);
 
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesTest.size() * sizeof(GLuint), indicesTest.data(), GL_STATIC_DRAW);
-	// glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
+	// glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesTest.size() * sizeof(GLuint), indicesTest.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
 	// glBufferData(GL_ELEMENT_ARRAY_BUFFER, testIndicesSize * sizeof(GLuint), triangleIndices, GL_STATIC_DRAW);
 
 	GLuint vertLoc = glGetAttribLocation(basicProgram, "vertex");
@@ -321,43 +339,43 @@ int main() {
 
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(*vcam.getInverseViewMatrix()));
 
-		glDrawElements(GL_TRIANGLES, indicesTest.size(), GL_UNSIGNED_INT, NULL);
+		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, NULL);
 		// glDrawElements(GL_LINES, indices.size() * 3, GL_UNSIGNED_INT, NULL);
 		// glDrawElements(GL_TRIANGLES, testIndicesSize, GL_UNSIGNED_INT, NULL);
 
-		if (iteration > 1975) {
+		// if (iteration > 1975) {
 
-			getchar();
+		// 	getchar();
 
-			cout << "Iteration: " << ++iteration << endl;
+		// 	cout << "Iteration: " << ++iteration << endl;
 
-			indicesTest.at(counter) = (indices[counter]); counter++;
-			indicesTest.at(counter) = (indices[counter]); counter++;
-			indicesTest.at(counter) = (indices[counter]); 
-			cout << "Inidices ---------------" << endl;
-			cout << indicesTest.at(counter - 2) << ": " << glm::to_string(vertices[indicesTest.at(counter - 2) - 1]) << endl;	
-			cout << indicesTest.at(counter - 1) << ": " << glm::to_string(vertices[indicesTest.at(counter - 1) - 1]) << endl;	
-			cout << indicesTest.at(counter) << ": " << glm::to_string(vertices[indicesTest.at(counter) - 1]) << endl;	
-			cout << "---------------" <<endl;
-			counter++;
-			glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, indicesTest.size()*sizeof(GLuint), indicesTest.data());
-		} else /*if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)*/ {
-			cout << "Iteration: " << ++iteration << endl;
+		// 	indicesTest.at(counter) = (indices[counter]); counter++;
+		// 	indicesTest.at(counter) = (indices[counter]); counter++;
+		// 	indicesTest.at(counter) = (indices[counter]); 
+		// 	cout << "Inidices ---------------" << endl;
+		// 	cout << indicesTest.at(counter - 2) << ": " << glm::to_string(vertices[indicesTest.at(counter - 2) - 1]) << endl;	
+		// 	cout << indicesTest.at(counter - 1) << ": " << glm::to_string(vertices[indicesTest.at(counter - 1) - 1]) << endl;	
+		// 	cout << indicesTest.at(counter) << ": " << glm::to_string(vertices[indicesTest.at(counter) - 1]) << endl;	
+		// 	cout << "---------------" <<endl;
+		// 	counter++;
+		// 	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, indicesTest.size()*sizeof(GLuint), indicesTest.data());
+		// } else if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+		// 	cout << "Iteration: " << ++iteration << endl;
 
-			indicesTest.at(counter) = (indices[counter]); counter++;
-			indicesTest.at(counter) = (indices[counter]); counter++;
-			indicesTest.at(counter) = (indices[counter]); 
-			if (iteration > 1975) {
-				cout << "Inidices ---------------" << endl;
-				cout << indicesTest.at(counter - 2) << ": " << glm::to_string(vertices[indicesTest.at(counter - 2) - 1]) << endl;	
-				cout << indicesTest.at(counter - 1) << ": " << glm::to_string(vertices[indicesTest.at(counter - 1) - 1]) << endl;	
-				cout << indicesTest.at(counter) << ": " << glm::to_string(vertices[indicesTest.at(counter) - 1]) << endl;	
-				cout << "---------------" <<endl;
-			}
-			counter++;
-			glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, indicesTest.size()*sizeof(GLuint), indicesTest.data());
-			// printVec(indicesTest);
-		}
+		// 	indicesTest.at(counter) = (indices[counter]); counter++;
+		// 	indicesTest.at(counter) = (indices[counter]); counter++;
+		// 	indicesTest.at(counter) = (indices[counter]); 
+		// 	if (iteration > 1975) {
+		// 		cout << "Inidices ---------------" << endl;
+		// 		cout << indicesTest.at(counter - 2) << ": " << glm::to_string(vertices[indicesTest.at(counter - 2) - 1]) << endl;	
+		// 		cout << indicesTest.at(counter - 1) << ": " << glm::to_string(vertices[indicesTest.at(counter - 1) - 1]) << endl;	
+		// 		cout << indicesTest.at(counter) << ": " << glm::to_string(vertices[indicesTest.at(counter) - 1]) << endl;	
+		// 		cout << "---------------" <<endl;
+		// 	}
+		// 	counter++;
+		// 	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, indicesTest.size()*sizeof(GLuint), indicesTest.data());
+		// 	// printVec(indicesTest);
+		// }
 
 
 		glfwSwapBuffers(window);

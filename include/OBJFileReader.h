@@ -30,6 +30,7 @@ const int MATERIAL_LIBRARY = 7;
 const int USE_MTL = 9;
 
 void printVec(vector<glm::vec3> &vec);
+void printVec(vector<glm::vec2> &vec);
 void printVec(vector<string> &vec);
 void printVec(vector<GLuint> &vec);
 stringstream* readFileIntoBuffer(const char *filename);
@@ -44,5 +45,7 @@ int countWords(stringstream &ss);
 int countWords(string &line);
 vector<GLuint> seperateFaceIndices(string &word);
 void getFaceIndices(vector<string> &faceWords, vector<GLuint> &vIndices, vector<GLuint> &vTexCoords, vector<GLuint> &vNormals);
+void sortVerticesTCsAndNormals(vector<GLfloat> &output, vector<glm::vec3> &vertices, vector<glm::vec2> &texcoords, vector<glm::vec3> &normals,
+								vector<GLuint> &vIndices, vector<GLuint> &tcIndices, vector<GLuint> &nIndices);
 
 #endif
