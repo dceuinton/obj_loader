@@ -113,37 +113,42 @@ void bindAndSetBuffers(GLObject *object) {
 
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	cout << "Made it to the end of bindAndSetBuffers" << endl;
 }
 
 void loadAndBindObjectTextures(GLObject *object) {
-	if (object->material->diffuseMap.length() ==0) {
-		cout << "Didn't load an image because " << object->materialName << " does not have a diffuseMap." << endl;
-		return;
+	if (object->material != NULL) {
+		if (object->material->diffuseMap.length() ==0) {
+			cout << "Didn't load an image because " << object->materialName << " does not have a diffuseMap." << endl;
+			return;
+		}
+
+		int x, y, n;
+		string filename = folderWithOBJ + object->material->diffuseMap;
+		unsigned char* image = loadImage(filename.c_str(), x, y, n);
+
+		if (image == NULL) {
+			cout << "ERROR: Didn't load an image." << endl;
+			return;
+		}
+
+		glGenTextures(1, &object->material->diffuseTex);
+		glBindTexture(GL_TEXTURE_2D, object->material->diffuseTex);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // No mip-mapping
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
+
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		delete[] image;
+		image = NULL;
 	}
-
-	int x, y, n;
-	string filename = folderWithOBJ + object->material->diffuseMap;
-	unsigned char* image = loadImage(filename.c_str(), x, y, n);
-
-	if (image == NULL) {
-		cout << "ERROR: Didn't load an image." << endl;
-		return;
-	}
-
-	glGenTextures(1, &object->material->diffuseTex);
-	glBindTexture(GL_TEXTURE_2D, object->material->diffuseTex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // No mip-mapping
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	delete[] image;
-	image = NULL;
+	cout << "Made it to the end of loadAndBindObjectTextures" << endl;
 }
 
 void setUniforms(GLObject *object) {
@@ -165,27 +170,34 @@ void setUniforms(GLObject *object) {
 	
 	GLuint textureLoc = glGetAttribLocation(object->sp, "u_texture");	
 	glUniform1i(textureLoc, 0);
+	if (object->material != NULL) {
+		GLuint kaLoc = glGetAttribLocation(object->sp, "Ka");
+		glUniform3fv(kaLoc, 3, glm::value_ptr(object->material->Ka));
 
-	GLuint kaLoc = glGetAttribLocation(object->sp, "Ka");
-	glUniform3fv(kaLoc, 3, glm::value_ptr(object->material->Ka));
+		GLuint kdLoc = glGetAttribLocation(object->sp, "Kd");
+		glUniform3fv(kdLoc, 3, glm::value_ptr(object->material->Kd));
 
-	GLuint kdLoc = glGetAttribLocation(object->sp, "Kd");
-	glUniform3fv(kdLoc, 3, glm::value_ptr(object->material->Kd));
+		GLuint ksLoc = glGetAttribLocation(object->sp, "Ks");
+		glUniform3fv(ksLoc, 3, glm::value_ptr(object->material->Ks));
 
-	GLuint ksLoc = glGetAttribLocation(object->sp, "Ks");
-	glUniform3fv(ksLoc, 3, glm::value_ptr(object->material->Ks));
-
-	GLuint niLoc = glGetAttribLocation(object->sp, "a");
-	glUniform1f(niLoc, object->material->Ni);
+		GLuint niLoc = glGetAttribLocation(object->sp, "a");
+		glUniform1f(niLoc, object->material->Ni);
+	}
 
 	glUseProgram(0);
+	cout << "Made it to the end of setUniforms" << endl;
 }
 
 void draw(GLObject *object) {
+	cout << "Printing! " << endl;
+	printVec(object->vertices);
 	glUseProgram(object->sp);
 	glBindVertexArray(object->vao);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, object->material->diffuseTex);
+
+	if (object->material->diffuseTex != 0) {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, object->material->diffuseTex);
+	}
 	glUniformMatrix4fv(object->viewMatLocation, 1, GL_FALSE, glm::value_ptr(*vcam.getInverseViewMatrix()));
 	glUniformMatrix4fv(object->modelMatLocation, 1, GL_FALSE, glm::value_ptr(*modelMatController.getViewMatrix()));
 	glDrawArrays(GL_TRIANGLES, 0, object->vertices.size());
@@ -214,18 +226,15 @@ void deleteObject(GLObject* object) {
 
 void loadObject() {
 
-	// // const char *filename = "test.obj";
 	const char *filename = (folderWithOBJ + file).c_str();
+	cout << filename << endl;
 	stringstream *file = readFileIntoBuffer(filename);
-	stringstream *materialLibrary;
-	
+	stringstream *materialLibrary;	
 	
 	string line;
 
 	vector<glm::vec3> vertices, normals;
 	vector<glm::vec2> texturecoords;
-
-	vector<GLuint> indices, vTC, vNormals;
 
 	vector<Material*> *materials;
 	vector<GLObject*> *objects = new vector<GLObject*>();
@@ -269,7 +278,24 @@ void loadObject() {
 			case MATERIAL_LIBRARY: {
 				vector<string> words = getWords(line);
 				string filename = folderWithOBJ + words[1];
+				cout << filename << endl;
+				string testing;
+				ifstream checkFile(filename);
+				cout << "Exists: " << checkFile.good() <<endl;
+				getline(checkFile, testing);
+				cout << testing << endl;
+				getline(checkFile, testing);
+				cout << testing << endl;
+				getline(checkFile, testing);
+				cout << testing << endl;
+				getline(checkFile, testing);
+				cout << testing << endl;
+				getline(checkFile, testing);
+				cout << testing << endl;
+				// const char* realFileName = filename.c_str();
+				// materialLibrary = readFileIntoBuffer(realFileName);
 				materialLibrary = readFileIntoBuffer(filename.c_str());
+				// materialLibrary = readFileIntoBuffer("./Baymax/Bigmax_White_OBJ.mtl");
 				materials = readMaterialsLibrary(*materialLibrary);				
 			}
 			
@@ -281,6 +307,7 @@ void loadObject() {
 				// }
 				GLObject *object = new GLObject();
 				vector<string> words = getWords(line);
+				cout << words[1];
 				object->materialName = words[1];
 				objects->push_back(object);
 				break;
@@ -294,6 +321,10 @@ void loadObject() {
 	file = NULL;
 	delete materialLibrary;
 	materialLibrary = NULL;
+
+	cout << "Made it past the file loading!" << endl;
+	cout << "Objects has: " << objects->size() << endl;
+	cout << "Materials has: " << materials->size() << endl;
 	
 	// Get the materials for each object
 	for (auto o: *objects) {
@@ -330,12 +361,19 @@ void loadObject() {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 
+	// printVec(vertices);
+	// cout << "Size: " << vertices.size() << endl;
+
 	for (GLObject* o: *objects) {
+		cout << o->materialName << endl;
 		sortVerticesTCsAndNormals(o->vertices, vertices, texturecoords, normals, o->vIndices, o->tcIndices, o->nIndices);
+		cout << "Got past sort vertices and normals" << endl;
 		bindAndSetBuffers(o);
 		loadAndBindObjectTextures(o);
 		setUniforms(o);
 	}
+
+	cout << "Made it to after object initialisation" << endl;
 
 	currentTime = 0.0;
 	previousTime = glfwGetTime();
@@ -345,6 +383,8 @@ void loadObject() {
 	int counter = 3;
 
 	while (!glfwWindowShouldClose(window)) {
+
+		cout << "Window starting soon" <<endl;
 		float cameraSpeed = 100.0f;
 
 		currentTime = glfwGetTime();
@@ -415,6 +455,7 @@ void loadObject() {
 int main(int argc, const char* argv[]) {
 	if (argc > 2) {
 		folderWithOBJ = argv[1];
+		folderWithOBJ = "./" + folderWithOBJ;
 		file = argv[2];
 	}
 	loadObject();

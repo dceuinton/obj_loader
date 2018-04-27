@@ -36,6 +36,27 @@ void printVec(vector<GLfloat> &vec) {
 
 stringstream* readFileIntoBuffer(const char *filename) {
 	ifstream infile(filename);
+	// if (infile.fail()) {
+	// 	cout << "Filestream did not open properly." << endl;
+	// 	return NULL;
+	// }
+	stringstream *buffer = new stringstream();
+	*buffer << infile.rdbuf();
+	// cout << buffer->str() << endl;
+	infile.close();
+	return buffer;
+}
+
+stringstream* readFileIntoBuffer(const string &filename) {
+	ifstream infile(filename);
+	// if (infile.fail()) {
+	// 	cout << "Filestream did not open properly." << endl;
+	// 	return NULL;
+	// }
+
+	string testing;
+	getline(infile, testing);
+	cout << "Testing: " << testing << endl;
 	stringstream *buffer = new stringstream();
 	*buffer << infile.rdbuf();
 	// cout << buffer->str() << endl;
@@ -214,6 +235,7 @@ void sortVerticesTCsAndNormals(vector<GLfloat> &output, vector<glm::vec3> &verti
 	for (int i = 0; i < vIndices.size(); i++) {
 
 		// ptrdiff_t pos = find(vIndices.begin(), vIndices.end(), i) - vIndices.begin();
+		cout << "Run: " << i << endl;
 
 		output.push_back(vertices[vIndices[i]].x);
 		output.push_back(vertices[vIndices[i]].y);
@@ -245,6 +267,9 @@ void sortVerticesTCsAndNormals(vector<GLfloat> &output, vector<glm::vec3> &verti
 }
 
 vector<Material*>* readMaterialsLibrary(stringstream &materialsLibrarySS) {
+
+	cout << "Read materials! " << endl;
+
 	vector<Material*> *output = new vector<Material*>;
 	string line;
 	int index = -1;
@@ -253,6 +278,7 @@ vector<Material*>* readMaterialsLibrary(stringstream &materialsLibrarySS) {
 		string identifier = words[0];
 		int mlCase = getMLCase(identifier);
 		
+		cout << line << endl;
 
 		// cout << "Beginning" << endl;
 		// printVec(words);

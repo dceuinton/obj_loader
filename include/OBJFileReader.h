@@ -73,6 +73,7 @@ void printVec(vector<string> &vec);
 void printVec(vector<GLuint> &vec);
 void printVec(vector<GLfloat> &vec);
 stringstream* readFileIntoBuffer(const char *filename);
+stringstream* readFileIntoBuffer(const string &filename);
 GLfloat getAndConvertToFloat(stringstream &ss, string &str);
 vector<string> getWords(string &line);
 int sumSentence(string &line);
