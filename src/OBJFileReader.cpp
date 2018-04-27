@@ -22,6 +22,15 @@ void printVec(vector<GLuint> &vec) {
 	for (auto v : vec) {
 		cout << v << endl;
 	}
+	// for (int i = 0; i < 457; i++) {
+	// 	cout << vec[i] << endl;
+	// }
+}
+
+void printVec(vector<GLfloat> &vec) {
+	for (auto v : vec) {
+		cout << v << endl;
+	}
 }
 
 stringstream* readFileIntoBuffer(const char *filename) {
@@ -201,19 +210,19 @@ void sortVerticesTCsAndNormals(vector<GLfloat> &output, vector<glm::vec3> &verti
 		return;
 	}
 
-	for (int i = 0; i < vIndices.size(); i++) {
+	for (int i = 0; i < vertices.size(); i++) {
 
-		// cout << i << endl;
-		// cout << vIndices[i] << endl;
-		output.push_back(vertices[vIndices[i]].x);
-		output.push_back(vertices[vIndices[i]].y);
-		output.push_back(vertices[vIndices[i]].z);
+		ptrdiff_t pos = find(vIndices.begin(), vIndices.end(), i) - vIndices.begin();
 
-		output.push_back(texcoords[tcIndices[i]].x);
-		output.push_back(texcoords[tcIndices[i]].y);
+		output.push_back(vertices[i].x);
+		output.push_back(vertices[i].y);
+		output.push_back(vertices[i].z);
 
-		output.push_back(normals[nIndices[i]].x);
-		output.push_back(normals[nIndices[i]].y);
-		output.push_back(normals[nIndices[i]].z);	
+		output.push_back(texcoords[tcIndices[(int) pos]].x);
+		output.push_back(texcoords[tcIndices[(int) pos]].y);
+
+		output.push_back(normals[nIndices[(int) pos]].x);
+		output.push_back(normals[nIndices[(int) pos]].y);
+		output.push_back(normals[nIndices[(int) pos]].z);	
 	}
 }

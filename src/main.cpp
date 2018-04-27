@@ -21,11 +21,13 @@
 #include "shader.h"
 #include "OBJFileReader.h"
 #include "glm_virtual_camera.h"
+#include "image.h"
 
 #define PI 3.14159
 using namespace std;
 
 GLMVirtualCamera vcam;
+GLMVirtualCamera modelMatController;
 
 double currentTime;
 double previousTime;
@@ -74,6 +76,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		if (key == GLFW_KEY_R) {vcam.moveUp(elapsedTime * cameraSpeed);}
 		if (key == GLFW_KEY_F) {vcam.moveDown(elapsedTime * cameraSpeed);}
 		if (key == GLFW_KEY_P) {vcam.printPosition();}
+
+		if (key == GLFW_KEY_J) {modelMatController.lookLeft(elapsedTime * rps);}
+		if (key == GLFW_KEY_L) {modelMatController.lookRight(elapsedTime * rps);}
+		if (key == GLFW_KEY_I) {modelMatController.lookUp(elapsedTime * rps);}
+		if (key == GLFW_KEY_K) {modelMatController.lookDown(elapsedTime * rps);}
 	}
 }
 
@@ -192,6 +199,17 @@ int main() {
 	cout << "vTexCoords Size: " << vTC.size() <<endl;
 	cout << "vNormals Size: " << vNormals.size() <<endl;
 
+	// ------------------------------------------------------------
+
+	// ptrdiff_t pos = find(indices.begin(), indices.end(), 0) - indices.begin();
+	// cout << "Position of 0 is : " << pos << endl;
+	// cout << indices.at(456) << endl;
+
+
+
+
+	// ------------------------------------------------------------
+
 	// printVec(texturecoords);
 
 	// cout << "Loop started" << endl;
@@ -215,25 +233,51 @@ int main() {
 
 	sortVerticesTCsAndNormals(fullVertices, vertices, texturecoords, normals, indices, vTC, vNormals);
 
+	// ofstream checkFullVs;
+	// checkFullVs.open("checkingFullVec.txt", ofstream::trunc);
+	// checkFullVs.close();
+	// checkFullVs.open("checkingFullVec.txt", ofstream::app | ofstream::out);
+	// int count = 0;
+	// int count2 = 0;
+	// while (count < fullVertices.size()) {
+
+	// 	checkFullVs << "Vector: " << ++count2 << "\n";
+	// 	checkFullVs << fullVertices[count] << " " << fullVertices[count+1] << " " << fullVertices[count+2] << "\n";
+	// 	checkFullVs << fullVertices[count+3] << " " << fullVertices[count+4] << "\n";
+	// 	checkFullVs << fullVertices[count+5] << " " << fullVertices[count+6] << " " << fullVertices[count+7] << "\n";
+
+	// 	count += 8;
+
+	// }
+	// checkFullVs.close();
+
+	// cout << "Size: " << fullVertices.size() << endl;
+	// cout << "480: " << fullVertices[480] << endl;
+	// cout << "481: " << fullVertices[481] << endl;
+	// cout << "482: " << fullVertices[482] << endl;
+
+	// --------------------------------------------------
+	// Open GL Stuff
+	// --------------------------------------------------
+
 	glfwSetErrorCallback(onError);
 
 	// GLfloat triangle[9] = {-0.5, -0.5f, 0.0f,
 	// 						0.5f, -0.5f, 0.0f,
 	// 						0.0f, 0.75f, 0.0f};
 
-	const int testArraySize = 12;
-	const int testIndicesSize = 6;
+	// const int testArraySize = 12;
+	// const int testIndicesSize = 6;
 
-	GLfloat triangle[testArraySize] = {4.610062, 170.562805, 8.466225, //21
-						   3.658489, 170.652985, 8.805237, //101
-							3.675125, 169.875290, 8.671654, //104
-							4.382637, 169.833160, 8.441437 //9
-						};
+	// GLfloat triangle[testArraySize] = {4.610062, 170.562805, 8.466225, //21
+	// 					   3.658489, 170.652985, 8.805237, //101
+	// 						3.675125, 169.875290, 8.671654, //104
+	// 						4.382637, 169.833160, 8.441437 //9
+	// 					};
 
 
-
-	GLuint triangleIndices[testIndicesSize] = {0, 1, 2,
-												2, 3, 0};
+	// GLuint triangleIndices[testIndicesSize] = {0, 1, 2,
+	// 											2, 3, 0};
 
 	if (!glfwInit()) {
 		return 1;
@@ -265,7 +309,8 @@ int main() {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, fullVertices.size() * sizeof(GLfloat), fullVertices.data(), GL_STATIC_DRAW);
+	// glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
 	// glBufferData(GL_ARRAY_BUFFER, testArraySize * sizeof(GLfloat), triangle, GL_STATIC_DRAW);
 
 	// glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesTest.size() * sizeof(GLuint), indicesTest.data(), GL_STATIC_DRAW);
@@ -273,10 +318,56 @@ int main() {
 	// glBufferData(GL_ELEMENT_ARRAY_BUFFER, testIndicesSize * sizeof(GLuint), triangleIndices, GL_STATIC_DRAW);
 
 	GLuint vertLoc = glGetAttribLocation(basicProgram, "vertex");
+	GLuint texLoc = glGetAttribLocation(basicProgram, "texcoord");
+	GLuint normalLoc = glGetAttribLocation(basicProgram, "normal");
 
-	glVertexAttribPointer(vertLoc, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), NULL);
+	glVertexAttribPointer(vertLoc, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), NULL);
+	glVertexAttribPointer(texLoc, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3*sizeof(GLfloat)));
+	glVertexAttribPointer(normalLoc, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(5*sizeof(GLfloat)));
 
 	glEnableVertexAttribArray(vertLoc);
+	glEnableVertexAttribArray(texLoc);
+	glEnableVertexAttribArray(normalLoc);
+
+	// ------------------------------------------------------------
+	// ------------------------------------------------------------
+	// ------------------------------------------------------------
+
+	
+
+	GLuint texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	int x, y, random;
+	unsigned char *image = loadImage("./old_man/Muro_head_dm.tga", x, y, random);
+
+	if (image == NULL) {
+		cout << "ERROR" << endl;
+		return 0;
+	}
+	
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // No mip-mapping
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	// Configure Texture Coordinate Wrapping
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	// Delete image data
+	delete[] image;
+	image = NULL;
+
+
+	// ------------------------------------------------------------
+	// ------------------------------------------------------------
+	// ------------------------------------------------------------
+
+
+
 
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -311,9 +402,13 @@ int main() {
 	glm::mat4 modelMat;
 
 	GLint modelLoc = glGetUniformLocation(basicProgram, "u_model");
+	// glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(*modelMatController.getViewMatrix()));
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMat));
 
 	// glClearColor(0.9f,0.2f,0.2f,0.0f);
+
+	GLuint textureLoc = glGetAttribLocation(basicProgram, "u_texture");
+	glUniform1i(textureLoc, 0);
 
 	currentTime = 0.0;
 	previousTime = glfwGetTime();
@@ -337,9 +432,24 @@ int main() {
 
 		glBindVertexArray(vao);
 
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture);
+
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(*vcam.getInverseViewMatrix()));
+		// glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(*modelMatController.getViewMatrix()));
 
 		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, NULL);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+
+		if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_N) == GLFW_REPEAT) {
+			modelMatController.lookLeft(elapsedTime*PI);
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_N) == GLFW_REPEAT) {
+			modelMatController.lookRight(elapsedTime*PI);
+		}
 		// glDrawElements(GL_LINES, indices.size() * 3, GL_UNSIGNED_INT, NULL);
 		// glDrawElements(GL_TRIANGLES, testIndicesSize, GL_UNSIGNED_INT, NULL);
 
