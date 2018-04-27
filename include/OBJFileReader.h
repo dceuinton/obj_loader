@@ -47,10 +47,23 @@ struct Material {
 	glm::vec4 Ka;
 	glm::vec4 Kd;
 	glm::vec4 Ks;
-	string diffuse_map;
-	GLuint diffuse_tex;
-	string bump_map;
-	GLuint bump_tex;
+	string diffuseMap;
+	GLuint diffuseTex;
+	string bumpMap;
+	GLuint bumpTex;
+	string specularMap;
+	GLuint specularTex;
+
+	void print() {
+		cout << endl;
+		cout << "Material: " << name << endl;
+		cout << "Ka: " << glm::to_string(Ka) << endl; 
+		cout << "Kd: " << glm::to_string(Kd) << endl; 
+		cout << "Ks: " << glm::to_string(Ks) << endl; 
+		cout << "Diffuse Map: " << diffuseTex << " " << diffuseMap << endl;
+		cout << "Bump Map: " << bumpTex << " " << bumpMap << endl;
+		cout << "Specular Map: " << specularTex << " " << specularMap << endl;
+	}
 };
 
 void printVec(vector<glm::vec3> &vec);
@@ -72,7 +85,7 @@ vector<GLuint> seperateFaceIndices(string &word);
 void getFaceIndices(vector<string> &faceWords, vector<GLuint> &vIndices, vector<GLuint> &vTexCoords, vector<GLuint> &vNormals);
 void sortVerticesTCsAndNormals(vector<GLfloat> &output, vector<glm::vec3> &vertices, vector<glm::vec2> &texcoords, vector<glm::vec3> &normals,
 								vector<GLuint> &vIndices, vector<GLuint> &tcIndices, vector<GLuint> &nIndices);
-vector<Material>* readMaterialsLibrary(stringstream &materialsLibrarySS);
+vector<Material*>* readMaterialsLibrary(stringstream &materialsLibrarySS);
 int getMLCase(string &identifier);
 
 #endif

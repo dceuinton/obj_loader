@@ -227,37 +227,76 @@ void sortVerticesTCsAndNormals(vector<GLfloat> &output, vector<glm::vec3> &verti
 	}
 }
 
-vector<Material>* readMaterialsLibrary(stringstream &materialsLibrarySS) {
-	vector<Material>* output = new vector<Material>;
+vector<Material*>* readMaterialsLibrary(stringstream &materialsLibrarySS) {
+	vector<Material*> *output = new vector<Material*>;
 	string line;
+	int index = -1;
 	while (getline(materialsLibrarySS, line)) {
 		vector<string> words = getWords(line);
 		string identifier = words[0];
 		int mlCase = getMLCase(identifier);
+		
+
+		// cout << "Beginning" << endl;
+		// printVec(words);
 
 		switch(mlCase) {
 			case NEW_MTL: {
-
+				// cout << "New Mat" << endl;
+				index++;
+				Material *another = new Material();
+				output->push_back(another);
+				output->at(index)->name = words[1];
+				break;
 			}
 			case KD: {
-
+				// cout << "Kd" << endl;
+				glm::vec3 nums = getVertex(line);
+				// cout << "Kd: " << glm::to_string(nums);
+				// printVec(words);
+				glm::vec4 lightingVec = glm::vec4(nums.x, nums.y, nums.z, 1.0f);
+				// cout << "Just before accessing. " << index << " size is " << output->size() << endl;
+				output->at(index)->Kd = lightingVec;
+				break;
 			}
 			case KA: {
-
+				// cout << "Ka" << endl;
+				glm::vec3 nums = getVertex(line);
+				// cout << "Ka: " << glm::to_string(nums);
+				// printVec(words);
+				glm::vec4 lightingVec = glm::vec4(nums.x, nums.y, nums.z, 1.0f);
+				output->at(index)->Ka = lightingVec;
+				break;
 			}
 			case KS: {
-
+				// cout << "Ks" << endl;
+				glm::vec3 nums = getVertex(line);
+				// cout << "Ks: " << glm::to_string(nums);
+				// printVec(words);
+				glm::vec4 lightingVec = glm::vec4(nums.x, nums.y, nums.z, 1.0f);
+				output->at(index)->Ks = lightingVec;
+				break;
 			}
 			case MAP_KD: {
-
+				// cout << "Map Kd" << endl;
+				output->at(index)->diffuseMap = words[1];
+				break;
 			}
 			case MAP_KS: {
-
+				// cout << "Map Ks" << endl;
+				output->at(index)->specularMap = words[1];
+				break;
 			}
 			case BUMP_MAP: {
-				
+				// cout << "Bump Map" << endl;
+				output->at(index)->bumpMap = words[1];
+				break;
 			}
 		}
+	}
+
+	for (auto v: *output) {
+		v->print();
 	}
 
 	return output; 

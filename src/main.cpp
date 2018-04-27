@@ -33,17 +33,6 @@ double currentTime;
 double previousTime;
 double elapsedTime;
 
-struct Material {
-	string name;
-	glm::vec4 Ka;
-	glm::vec4 Kd;
-	glm::vec4 Ks;
-	string diffuse_map;
-	GLuint diffuse_tex;
-	string bump_map;
-	GLuint bump_tex;
-};
-
 // ----------------------------------------------------------------------------------------
 
 // Called on Error Event
@@ -109,6 +98,7 @@ int main() {
 	vector<glm::vec3> vertices, normals;
 	vector<glm::vec2> texturecoords;
 	vector<GLuint> indices, vTC, vNormals;
+	vector<Material*> *materials;
 
 
 	// ofstream vertexFile;
@@ -183,9 +173,10 @@ int main() {
 			case MATERIAL_LIBRARY: {
 				mtl++;
 				vector<string> words = getWords(line);
-				printVec(words);
+				// printVec(words);
 				string filename = folderWithOBJ + words[1];
 				materialLibrary = readFileIntoBuffer(filename.c_str());
+				materials = readMaterialsLibrary(*materialLibrary);
 				
 			}
 			
