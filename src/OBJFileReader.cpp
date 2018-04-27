@@ -28,6 +28,7 @@ void printVec(vector<GLuint> &vec) {
 }
 
 void printVec(vector<GLfloat> &vec) {
+	cout << "Printing!" << endl;
 	for (auto v : vec) {
 		cout << v << endl;
 	}

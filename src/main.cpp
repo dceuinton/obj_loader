@@ -33,13 +33,21 @@ double currentTime;
 double previousTime;
 double elapsedTime;
 
+string folderWithOBJ = "./old_man/";
+
 struct GLObject {
-	std::vector<GLfloat> vertices;
+	vector<GLfloat> vertices;
 	GLuint vao; 					//vertex array object
 	GLuint vbo; 					//vertex buffer object
 	GLuint ebo; 					//element buffer object
-	GLuint sp; 						//shader program
+	GLuint sp;						//shader program
+	string materialName ;						
 	Material* material;
+	vector<GLuint> vIndices;
+	vector<GLuint> tcIndices;
+	vector<GLuint> nIndices;
+	GLint modelMatLocation;
+	GLint viewMatLocation;
 };
 
 // ----------------------------------------------------------------------------------------
@@ -93,7 +101,114 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 }
 
+void bindAndSetBuffers(GLObject *object) {
+	object->sp = loadProgram("./shader/basic.vert.glsl", NULL, NULL, NULL, "./shader/basic.frag.glsl");
+	cout << "The program number is : " << object->sp << endl;
 
+	glGenVertexArrays(1, &object->vao);
+	glGenBuffers(1, &object->vbo);
+
+	glBindVertexArray(object->vao);
+	glBindBuffer(GL_ARRAY_BUFFER, object->vbo);
+
+	glBufferData(GL_ARRAY_BUFFER, object->vertices.size() * sizeof(GLfloat), object->vertices.data(), GL_STATIC_DRAW);
+
+	GLuint vertLoc = glGetAttribLocation(object->sp, "vertex");
+	GLuint texLoc = glGetAttribLocation(object->sp, "texcoord");
+	GLuint normalLoc = glGetAttribLocation(object->sp, "normal");
+
+	glVertexAttribPointer(vertLoc, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), NULL);
+	glVertexAttribPointer(texLoc, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3*sizeof(GLfloat)));
+	glVertexAttribPointer(normalLoc, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(5*sizeof(GLfloat)));
+
+	glEnableVertexAttribArray(vertLoc);
+	glEnableVertexAttribArray(texLoc);
+	glEnableVertexAttribArray(normalLoc);
+
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	// glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);	
+
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void loadAndBindObjectTextures(GLObject *object) {
+	if (object->material->diffuseMap.length() ==0) {
+		cout << "Didn't load an image because " << object->materialName << " does not have a diffuseMap." << endl;
+		return;
+	}
+
+	int x, y, n;
+	string filename = folderWithOBJ + object->material->diffuseMap;
+	unsigned char* image = loadImage(filename.c_str(), x, y, n);
+
+	if (image == NULL) {
+		cout << "ERROR: Didn't load an image." << endl;
+		return;
+	}
+
+	glGenTextures(1, &object->material->diffuseTex);
+	glBindTexture(GL_TEXTURE_2D, object->material->diffuseTex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // No mip-mapping
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	delete[] image;
+	image = NULL;
+}
+
+void setUniforms(GLObject *object) {
+	cout << "Shader program number " << object->sp << endl;
+
+	glUseProgram(object->sp);
+
+	glm::mat4 projectionMat = glm::perspective(glm::radians(67.0f), 1.0f, 0.2f, 1000.0f);
+	GLint projectionLoc = glGetUniformLocation(object->sp, "u_projection");
+	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projectionMat));
+
+	object->viewMatLocation = glGetUniformLocation(object->sp, "u_view");
+	glm::vec3 initialPos = glm::vec3(0.0f, 165.5, 30.5);
+	vcam.setPosition(initialPos);
+	glUniformMatrix4fv(object->viewMatLocation, 1, GL_FALSE, glm::value_ptr(*vcam.getInverseViewMatrix()));
+	
+	object->modelMatLocation = glGetUniformLocation(object->sp, "u_model");
+	glUniformMatrix4fv(object->modelMatLocation, 1, GL_FALSE, glm::value_ptr(*modelMatController.getViewMatrix()));
+	
+	GLuint textureLoc = glGetAttribLocation(object->sp, "u_texture");	
+	glUniform1i(textureLoc, 0);
+
+	GLuint kaLoc = glGetAttribLocation(object->sp, "Ka");
+	glUniform3fv(kaLoc, 3, glm::value_ptr(object->material->Ka));
+
+	GLuint kdLoc = glGetAttribLocation(object->sp, "Kd");
+	glUniform3fv(kdLoc, 3, glm::value_ptr(object->material->Kd));
+
+	GLuint ksLoc = glGetAttribLocation(object->sp, "Ks");
+	glUniform3fv(ksLoc, 3, glm::value_ptr(object->material->Ks));
+
+	glUseProgram(0);
+}
+
+void draw(GLObject *object) {
+	glUseProgram(object->sp);
+	glBindVertexArray(object->vao);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, object->material->diffuseTex);
+	glUniformMatrix4fv(object->viewMatLocation, 1, GL_FALSE, glm::value_ptr(*vcam.getInverseViewMatrix()));
+	glUniformMatrix4fv(object->modelMatLocation, 1, GL_FALSE, glm::value_ptr(*modelMatController.getViewMatrix()));
+	glDrawArrays(GL_TRIANGLES, 0, object->vertices.size());
+	// glDrawArrays(GL_LINES, 0, object->vertices.size());
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
 
 int main() {
 
@@ -102,12 +217,16 @@ int main() {
 	stringstream *file = readFileIntoBuffer(filename);
 	stringstream *materialLibrary;
 	
-	string folderWithOBJ = "./old_man/";
+	
 	string line;
+
 	vector<glm::vec3> vertices, normals;
 	vector<glm::vec2> texturecoords;
+
 	vector<GLuint> indices, vTC, vNormals;
+
 	vector<Material*> *materials;
+	vector<GLObject*> *objects = new vector<GLObject*>();
 
 	int coms=0, gs=0, vs=0, vts=0, vns=0, sgs=0, fs=0, mtl=0, usemtls=0, unknown=0;
 
@@ -124,9 +243,9 @@ int main() {
 
 			case GROUP:
 			gs++;
-			if (gs >= 3) {
-				limiter = false;
-			}
+			// if (gs >= 3) {
+			// 	limiter = false;
+			// }
 			break;
 
 			case SMOOTHING_GROUP:
@@ -162,7 +281,8 @@ int main() {
 			case FACE: {
 				fs++;
 				vector<string> vec = getWords(line);
-				getFaceIndices(vec, indices, vTC, vNormals);
+				getFaceIndices(vec, objects->back()->vIndices, objects->back()->tcIndices, objects->back()->nIndices);
+				// getFaceIndices(vec, indices, vTC, vNormals);
 			}
 			break;
 
@@ -178,6 +298,14 @@ int main() {
 
 			case USE_MTL: {
 				usemtls++;
+				// if (usemtls > 3) {
+				// 	limiter = false;
+				// 	break;
+				// }
+				GLObject *object = new GLObject();
+				vector<string> words = getWords(line);
+				object->materialName = words[1];
+				objects->push_back(object);
 			}
 			break;
 
@@ -195,7 +323,7 @@ int main() {
 	// cout << "Normals: " << vns << endl;
 	// cout << "Faces: " << fs << endl;
 	// cout << "Material libraries: " << mtl << endl;
-	// cout << "Use materials: " << usemtls << endl;
+	cout << "Use materials: " << usemtls << endl;
 	// cout << "Unknown: " << unknown << endl;
 
 	// cout << endl;
@@ -209,9 +337,25 @@ int main() {
 	
 	// ------------------------------------------------------------
 
-	vector<GLfloat> fullVertices;
+	cout << "Objects size: " << objects->size() << endl;
 
-	sortVerticesTCsAndNormals(fullVertices, vertices, texturecoords, normals, indices, vTC, vNormals);
+	// Get the materials for each object
+	for (auto o: *objects) {
+		string material = o->materialName;
+		for (auto m: *materials) {
+			if (m->name.compare(material) == 0) {
+				cout << "Matched " << m->name << endl;
+				o->material = m;
+			}
+		}
+	}
+
+	// bindAndSetBuffers(objects->back());
+
+	// vector<GLfloat> fullVertices;
+
+	// sortVerticesTCsAndNormals(objects->back()->vertices, vertices, texturecoords, normals, objects->back()->vIndices, objects->back()->tcIndices, objects->back()->nIndices);
+	// sortVerticesTCsAndNormals(fullVertices, vertices, texturecoords, normals, indices, vTC, vNormals);
 
 	// --------------------------------------------------
 	// Open GL Stuff
@@ -237,98 +381,124 @@ int main() {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 
-	GLuint basicProgram = loadProgram("./shader/basic.vert.glsl", NULL, NULL, NULL, "./shader/basic.frag.glsl");
+	// GLuint basicProgram = loadProgram("./shader/basic.vert.glsl", NULL, NULL, NULL, "./shader/basic.frag.glsl");
 
-	GLuint vao, vbo, ebo;
+	// GLuint vao, vbo, ebo;
 
-	glGenVertexArrays(1, &vao);
-	glGenBuffers(1, &vbo);
-	glGenBuffers(1, &ebo);
+	// glGenVertexArrays(1, &vao);
+	// glGenBuffers(1, &vbo);
+	// // glGenBuffers(1, &ebo);
 
-	glBindVertexArray(vao);
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	// glBindVertexArray(vao);
+	// glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	// // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 
-	glBufferData(GL_ARRAY_BUFFER, fullVertices.size() * sizeof(GLfloat), fullVertices.data(), GL_STATIC_DRAW);
-	// glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
-	// glBufferData(GL_ARRAY_BUFFER, testArraySize * sizeof(GLfloat), triangle, GL_STATIC_DRAW);
+	// glBufferData(GL_ARRAY_BUFFER, objects->back()->vertices.size() * sizeof(GLfloat), objects->back()->vertices.data(), GL_STATIC_DRAW);
+	// // glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
+	// // glBufferData(GL_ARRAY_BUFFER, testArraySize * sizeof(GLfloat), triangle, GL_STATIC_DRAW);
 
-	// glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesTest.size() * sizeof(GLuint), indicesTest.data(), GL_STATIC_DRAW);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
-	// glBufferData(GL_ELEMENT_ARRAY_BUFFER, testIndicesSize * sizeof(GLuint), triangleIndices, GL_STATIC_DRAW);
+	// // glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesTest.size() * sizeof(GLuint), indicesTest.data(), GL_STATIC_DRAW);
+	// // glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
+	// // glBufferData(GL_ELEMENT_ARRAY_BUFFER, testIndicesSize * sizeof(GLuint), triangleIndices, GL_STATIC_DRAW);
 
-	GLuint vertLoc = glGetAttribLocation(basicProgram, "vertex");
-	GLuint texLoc = glGetAttribLocation(basicProgram, "texcoord");
-	GLuint normalLoc = glGetAttribLocation(basicProgram, "normal");
+	// GLuint vertLoc = glGetAttribLocation(basicProgram, "vertex");
+	// GLuint texLoc = glGetAttribLocation(basicProgram, "texcoord");
+	// GLuint normalLoc = glGetAttribLocation(basicProgram, "normal");
 
-	glVertexAttribPointer(vertLoc, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), NULL);
-	glVertexAttribPointer(texLoc, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3*sizeof(GLfloat)));
-	glVertexAttribPointer(normalLoc, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(5*sizeof(GLfloat)));
+	// glVertexAttribPointer(vertLoc, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), NULL);
+	// glVertexAttribPointer(texLoc, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3*sizeof(GLfloat)));
+	// glVertexAttribPointer(normalLoc, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(5*sizeof(GLfloat)));
 
-	glEnableVertexAttribArray(vertLoc);
-	glEnableVertexAttribArray(texLoc);
-	glEnableVertexAttribArray(normalLoc);
+	// glEnableVertexAttribArray(vertLoc);
+	// glEnableVertexAttribArray(texLoc);
+	// glEnableVertexAttribArray(normalLoc);
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// bindAndSetBuffers(objects->back());
 
 	// ------------------------------------------------------------
 	// ------------------------------------------------------------
 	// ------------------------------------------------------------
 
-	int x, y, random;
-	unsigned char *image = loadImage("./old_man/Muro_head_dm.tga", x, y, random);
+	// int x, y, random;
+	// unsigned char *image = loadImage("./old_man/Muro_head_dm.tga", x, y, random);
 
-	if (image == NULL) {
-		cout << "ERROR" << endl;
-		return 0;
+	// if (image == NULL) {
+	// 	cout << "ERROR" << endl;
+	// 	return 0;
+	// }
+
+	// GLuint texture;
+	// glGenTextures(1, &texture);
+	// glBindTexture(GL_TEXTURE_2D, texture);
+	
+	// glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // No mip-mapping
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	// // Configure Texture Coordinate Wrapping
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
+
+	// glBindTexture(GL_TEXTURE_2D, 0);
+
+	// // Delete image data
+	// delete[] image;
+	// image = NULL;
+
+	// cout << "Texture: " << texture << endl;
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// loadAndBindObjectTextures(objects->back());
+	// ------------------------------------------------------------
+	// ------------------------------------------------------------
+	// ------------------------------------------------------------
+
+	// glBindVertexArray(0);
+	// glBindBuffer(GL_ARRAY_BUFFER, 0);
+	// glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	// cout << objects->back()->sp << endl;
+
+	// // glUseProgram(basicProgram);
+	// glUseProgram(objects->back()->sp);
+
+	// glm::mat4 projectionMat = glm::perspective(glm::radians(67.0f), 1.0f, 0.2f, 1000.0f);
+
+	// GLint projectionLoc = glGetUniformLocation(objects->back()->sp, "u_projection");
+	// // GLint projectionLoc = glGetUniformLocation(basicProgram, "u_projection");
+	// glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projectionMat));
+	
+	// GLint viewLoc = glGetUniformLocation(objects->back()->sp, "u_view");
+	// // GLint viewLoc = glGetUniformLocation(basicProgram, "u_view");
+	
+	// glm::vec3 initialPos = glm::vec3(0.0f, 165.5, 30.5);
+	// vcam.setPosition(initialPos);
+	// glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(*vcam.getInverseViewMatrix()));
+	
+	// glm::mat4 modelMat;
+
+	// GLint modelLoc = glGetUniformLocation(objects->back()->sp, "u_model");
+	// // GLint modelLoc = glGetUniformLocation(basicProgram, "u_model");
+	// glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMat));
+
+	// GLuint textureLoc = glGetAttribLocation(objects->back()->sp, "u_texture");
+	// // GLuint textureLoc = glGetAttribLocation(basicProgram, "u_texture");
+	// glUniform1i(textureLoc, 0);
+
+// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	// setUniforms(objects->back());
+
+	printVec(objects->at(0)->vertices);
+	cout << (objects->at(0)->vertices.size()) << endl;
+
+	for (GLObject* o: *objects) {
+		sortVerticesTCsAndNormals(o->vertices, vertices, texturecoords, normals, o->vIndices, o->tcIndices, o->nIndices);
+		bindAndSetBuffers(o);
+		loadAndBindObjectTextures(o);
+		setUniforms(o);
 	}
-
-	GLuint texture;
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
-	
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // No mip-mapping
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	// Configure Texture Coordinate Wrapping
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	// Delete image data
-	delete[] image;
-	image = NULL;
-
-	cout << "Texture: " << texture << endl;
-	// ------------------------------------------------------------
-	// ------------------------------------------------------------
-	// ------------------------------------------------------------
-
-	glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-	glUseProgram(basicProgram);
-
-	glm::mat4 projectionMat = glm::perspective(glm::radians(67.0f), 1.0f, 0.2f, 1000.0f);
-
-	GLint projectionLoc = glGetUniformLocation(basicProgram, "u_projection");
-	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projectionMat));
-	
-	GLint viewLoc = glGetUniformLocation(basicProgram, "u_view");
-	
-	glm::vec3 initialPos = glm::vec3(0.0f, 165.5, 30.5);
-	vcam.setPosition(initialPos);
-	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(*vcam.getInverseViewMatrix()));
-	
-	glm::mat4 modelMat;
-
-	GLint modelLoc = glGetUniformLocation(basicProgram, "u_model");
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMat));
-
-	GLuint textureLoc = glGetAttribLocation(basicProgram, "u_texture");
-	glUniform1i(textureLoc, 0);
 
 	currentTime = 0.0;
 	previousTime = glfwGetTime();
@@ -349,23 +519,31 @@ int main() {
 		glClearColor(0.4f,0.4f,0.4f,0.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glUseProgram(basicProgram);
+		// glUseProgram(objects->back()->sp);
+		// glUseProgram(basicProgram);
 
-		glBindVertexArray(vao);
+		// glBindVertexArray(objects->back()->vao);
+		// glBindVertexArray(vao);
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture);
+		// glActiveTexture(GL_TEXTURE0);
+		// glBindTexture(GL_TEXTURE_2D, objects->back()->material->diffuseTex);
+		// glBindTexture(GL_TEXTURE_2D, texture);
 
-		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(*vcam.getInverseViewMatrix()));
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(*modelMatController.getViewMatrix()));
+		// glUniformMatrix4fv(objects->back()->viewMatLocation, 1, GL_FALSE, glm::value_ptr(*vcam.getInverseViewMatrix()));
+		// glUniformMatrix4fv(objects->back()->modelMatLocation, 1, GL_FALSE, glm::value_ptr(*modelMatController.getViewMatrix()));
 
 		// glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, NULL);
 		// glDrawElements(GL_LINES, indices.size(), GL_UNSIGNED_INT, NULL);
 		// glDrawArrays(GL_LINES, 0, fullVertices.size());
-		glDrawArrays(GL_TRIANGLES, 0, fullVertices.size());
+		// glDrawArrays(GL_TRIANGLES, 0, objects->back()->vertices.size());
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, 0);
+		// glActiveTexture(GL_TEXTURE0);
+		// glBindTexture(GL_TEXTURE_2D, 0);
+
+		// draw(objects->back());
+		for (GLObject* o: *objects) {
+			draw(o);
+		}
 
 		if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_N) == GLFW_REPEAT) {
 			modelMatController.lookLeft(elapsedTime*PI);
