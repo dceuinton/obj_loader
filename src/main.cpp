@@ -33,6 +33,15 @@ double currentTime;
 double previousTime;
 double elapsedTime;
 
+struct GLObject {
+	std::vector<GLfloat> vertices;
+	GLuint vao; 					//vertex array object
+	GLuint vbo; 					//vertex buffer object
+	GLuint ebo; 					//element buffer object
+	GLuint sp; 						//shader program
+	Material* material;
+};
+
 // ----------------------------------------------------------------------------------------
 
 // Called on Error Event
@@ -100,12 +109,6 @@ int main() {
 	vector<GLuint> indices, vTC, vNormals;
 	vector<Material*> *materials;
 
-
-	// ofstream vertexFile;
-	// vertexFile.open("verticesRecord.txt", std::ofstream::trunc);
-	// vertexFile.close();
-	// vertexFile.open("verticesRecord.txt", std::ofstream::out | std::ofstream::app);
-
 	int coms=0, gs=0, vs=0, vts=0, vns=0, sgs=0, fs=0, mtl=0, usemtls=0, unknown=0;
 
 	bool limiter = true;
@@ -117,7 +120,6 @@ int main() {
 		switch (identifier) {
 			case COMMENT:
 			coms++;
-			// cout << coms << ": " << line << endl;
 			break;
 
 			case GROUP:
@@ -125,7 +127,6 @@ int main() {
 			if (gs >= 3) {
 				limiter = false;
 			}
-			// cout << "Words: " << countWords(line) << endl;
 			break;
 
 			case SMOOTHING_GROUP:
@@ -136,11 +137,7 @@ int main() {
 				vs++;
 				glm::vec3 vec;
 				vec = getVertex(line);
-				
-				// vertexFile << glm::to_string(vec) << "\n";
-				
 				vertices.push_back(vec);
-				// printVec(vertices);
 				break;
 			}					
 
@@ -165,7 +162,6 @@ int main() {
 			case FACE: {
 				fs++;
 				vector<string> vec = getWords(line);
-				// // printVec(vec);
 				getFaceIndices(vec, indices, vTC, vNormals);
 			}
 			break;
@@ -173,18 +169,15 @@ int main() {
 			case MATERIAL_LIBRARY: {
 				mtl++;
 				vector<string> words = getWords(line);
-				// printVec(words);
 				string filename = folderWithOBJ + words[1];
 				materialLibrary = readFileIntoBuffer(filename.c_str());
-				materials = readMaterialsLibrary(*materialLibrary);
-				
+				materials = readMaterialsLibrary(*materialLibrary);				
 			}
 			
 			break;
 
 			case USE_MTL: {
 				usemtls++;
-
 			}
 			break;
 
@@ -193,8 +186,7 @@ int main() {
 			break;
 		}
 	}
-	// vertexFile.close();
-
+	
 	// cout << "Comments: " << coms << endl;
 	// cout << "Groups: " << gs << endl;
 	// cout << "Shading groups: " << sgs << endl;
@@ -214,86 +206,18 @@ int main() {
 
 	// ------------------------------------------------------------
 
-	// ptrdiff_t pos = find(indices.begin(), indices.end(), 0) - indices.begin();
-	// cout << "Position of 0 is : " << pos << endl;
-	// cout << indices.at(456) << endl;
-
-	string readbufferthing;
-	while (getline(*materialLibrary, readbufferthing)) {
-		cout << "A line: " << readbufferthing << endl;
-	}
 	
-
 	// ------------------------------------------------------------
 
-	// printVec(texturecoords);
-
-	// cout << "Loop started" << endl;
-	// for (auto v: vertices) {
-	// 	if (v.y < 5.0f) {
-	// 		cout << v.y << endl;
-	// 	}
-	// }
-	// cout << "Loop finished" << endl;
-
-	// vector<GLuint> indicesTest(indices.size());
-
-	// indicesTest.at(0) = (indices[0]);
-	// indicesTest.at(1) = (indices[1]);
-	// indicesTest.at(2) = (indices[2]);
-
-	// printVec(vertices);
-
 	vector<GLfloat> fullVertices;
-	// printVec(indices);
 
 	sortVerticesTCsAndNormals(fullVertices, vertices, texturecoords, normals, indices, vTC, vNormals);
-
-	// ofstream checkFullVs;
-	// checkFullVs.open("checkingFullVec.txt", ofstream::trunc);
-	// checkFullVs.close();
-	// checkFullVs.open("checkingFullVec.txt", ofstream::app | ofstream::out);
-	// int count = 0;
-	// int count2 = 0;
-	// while (count < fullVertices.size()) {
-
-	// 	checkFullVs << "Vector: " << ++count2 << "\n";
-	// 	checkFullVs << fullVertices[count] << " " << fullVertices[count+1] << " " << fullVertices[count+2] << "\n";
-	// 	checkFullVs << fullVertices[count+3] << " " << fullVertices[count+4] << "\n";
-	// 	checkFullVs << fullVertices[count+5] << " " << fullVertices[count+6] << " " << fullVertices[count+7] << "\n";
-
-	// 	count += 8;
-
-	// }
-	// checkFullVs.close();
-
-	// cout << "Size: " << fullVertices.size() << endl;
-	// cout << "480: " << fullVertices[480] << endl;
-	// cout << "481: " << fullVertices[481] << endl;
-	// cout << "482: " << fullVertices[482] << endl;
 
 	// --------------------------------------------------
 	// Open GL Stuff
 	// --------------------------------------------------
 
 	glfwSetErrorCallback(onError);
-
-	// GLfloat triangle[9] = {-0.5, -0.5f, 0.0f,
-	// 						0.5f, -0.5f, 0.0f,
-	// 						0.0f, 0.75f, 0.0f};
-
-	// const int testArraySize = 12;
-	// const int testIndicesSize = 6;
-
-	// GLfloat triangle[testArraySize] = {4.610062, 170.562805, 8.466225, //21
-	// 					   3.658489, 170.652985, 8.805237, //101
-	// 						3.675125, 169.875290, 8.671654, //104
-	// 						4.382637, 169.833160, 8.441437 //9
-	// 					};
-
-
-	// GLuint triangleIndices[testIndicesSize] = {0, 1, 2,
-	// 											2, 3, 0};
 
 	if (!glfwInit()) {
 		return 1;
@@ -362,8 +286,6 @@ int main() {
 	glBindTexture(GL_TEXTURE_2D, texture);
 	
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // No mip-mapping
-	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // No mip-mapping
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -371,8 +293,6 @@ int main() {
 	// Configure Texture Coordinate Wrapping
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
-	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_REPEAT);
-	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_REPEAT);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -384,42 +304,6 @@ int main() {
 	// ------------------------------------------------------------
 	// ------------------------------------------------------------
 	// ------------------------------------------------------------
-	int jkl = 0;
-	while (jkl < fullVertices.size()) {
-		if (fullVertices[jkl] < 0.0 && fullVertices[jkl] > -1.4) {
-			if (fullVertices[jkl+2] > 160) {
-				// if (fullVertices[jkl+2] < 0) {
-					cout << "Vertex" << endl;
-					cout << fullVertices[jkl] << " "
-					<< fullVertices[jkl+1] << " "
-					<< fullVertices[jkl+2]<< " "
-					// << fullVertices[jkl+3]<< " "
-					// << fullVertices[jkl+4]<< " "
-					// << fullVertices[jkl+5]<< " "
-					// << fullVertices[jkl+6]<< " "
-					/*<< fullVertices[jkl+7]*/ << endl;;
-				// }
-			}
-		}
-// if (fullVertices[jkl+3] < 0.52 && fullVertices[jkl+3] > 0.48) {
-// 			if (fullVertices[jkl+4] < 0.52 && fullVertices[jkl+4] > 0.48) {
-// 				if (fullVertices[jkl+2] < 0) {
-// 					cout << "Vertex" << endl;
-// 					cout << fullVertices[jkl] << " "
-// 					<< fullVertices[jkl+1] << " "
-// 					<< fullVertices[jkl+2]<< " "
-// 					// << fullVertices[jkl+3]<< " "
-// 					// << fullVertices[jkl+4]<< " "
-// 					// << fullVertices[jkl+5]<< " "
-// 					// << fullVertices[jkl+6]<< " "
-// 					/*<< fullVertices[jkl+7]*/ << endl;;
-// 				}
-// 			}
-// 		}
-
-		jkl += 8;
-	}
-
 
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -431,33 +315,17 @@ int main() {
 
 	GLint projectionLoc = glGetUniformLocation(basicProgram, "u_projection");
 	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projectionMat));
-	// ----------------------------------------------------------------------
-	// glm::mat4 viewMat;
-	// glm::vec3 viewPosition(4.0f,  170.0f,  10.0f);
-	// glm::vec3 viewUp      (0.0f,  1.0f,  0.0f);
-	// glm::vec3 viewForward (0.0f,  0.0f, -1.0f);
-
-	// viewUp      = glm::normalize(viewUp);
-	// viewForward = glm::normalize(viewForward);
-
-	// viewMat = glm::lookAt(viewPosition, viewPosition + viewForward, viewUp);
-
+	
 	GLint viewLoc = glGetUniformLocation(basicProgram, "u_view");
-	// glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(viewMat));
-
+	
 	glm::vec3 initialPos = glm::vec3(0.0f, 165.5, 30.5);
 	vcam.setPosition(initialPos);
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(*vcam.getInverseViewMatrix()));
 	
-	// ----------------------------------------------------------------------
-
 	glm::mat4 modelMat;
 
 	GLint modelLoc = glGetUniformLocation(basicProgram, "u_model");
-	// glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(*modelMatController.getViewMatrix()));
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(modelMat));
-
-	// glClearColor(0.9f,0.2f,0.2f,0.0f);
 
 	GLuint textureLoc = glGetAttribLocation(basicProgram, "u_texture");
 	glUniform1i(textureLoc, 0);
@@ -492,7 +360,9 @@ int main() {
 		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(*modelMatController.getViewMatrix()));
 
 		// glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, NULL);
-		glDrawElements(GL_LINES, indices.size(), GL_UNSIGNED_INT, NULL);
+		// glDrawElements(GL_LINES, indices.size(), GL_UNSIGNED_INT, NULL);
+		// glDrawArrays(GL_LINES, 0, fullVertices.size());
+		glDrawArrays(GL_TRIANGLES, 0, fullVertices.size());
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -533,44 +403,7 @@ int main() {
 		if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_N) == GLFW_REPEAT) {
 			vcam.lookRight(elapsedTime*PI);
 		}
-		// glDrawElements(GL_LINES, indices.size() * 3, GL_UNSIGNED_INT, NULL);
-		// glDrawElements(GL_TRIANGLES, testIndicesSize, GL_UNSIGNED_INT, NULL);
-
-		// if (iteration > 1975) {
-
-		// 	getchar();
-
-		// 	cout << "Iteration: " << ++iteration << endl;
-
-		// 	indicesTest.at(counter) = (indices[counter]); counter++;
-		// 	indicesTest.at(counter) = (indices[counter]); counter++;
-		// 	indicesTest.at(counter) = (indices[counter]); 
-		// 	cout << "Inidices ---------------" << endl;
-		// 	cout << indicesTest.at(counter - 2) << ": " << glm::to_string(vertices[indicesTest.at(counter - 2) - 1]) << endl;	
-		// 	cout << indicesTest.at(counter - 1) << ": " << glm::to_string(vertices[indicesTest.at(counter - 1) - 1]) << endl;	
-		// 	cout << indicesTest.at(counter) << ": " << glm::to_string(vertices[indicesTest.at(counter) - 1]) << endl;	
-		// 	cout << "---------------" <<endl;
-		// 	counter++;
-		// 	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, indicesTest.size()*sizeof(GLuint), indicesTest.data());
-		// } else if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-		// 	cout << "Iteration: " << ++iteration << endl;
-
-		// 	indicesTest.at(counter) = (indices[counter]); counter++;
-		// 	indicesTest.at(counter) = (indices[counter]); counter++;
-		// 	indicesTest.at(counter) = (indices[counter]); 
-		// 	if (iteration > 1975) {
-		// 		cout << "Inidices ---------------" << endl;
-		// 		cout << indicesTest.at(counter - 2) << ": " << glm::to_string(vertices[indicesTest.at(counter - 2) - 1]) << endl;	
-		// 		cout << indicesTest.at(counter - 1) << ": " << glm::to_string(vertices[indicesTest.at(counter - 1) - 1]) << endl;	
-		// 		cout << indicesTest.at(counter) << ": " << glm::to_string(vertices[indicesTest.at(counter) - 1]) << endl;	
-		// 		cout << "---------------" <<endl;
-		// 	}
-		// 	counter++;
-		// 	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, indicesTest.size()*sizeof(GLuint), indicesTest.data());
-		// 	// printVec(indicesTest);
-		// }
-
-
+		
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}

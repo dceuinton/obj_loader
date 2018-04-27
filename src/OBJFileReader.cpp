@@ -210,21 +210,37 @@ void sortVerticesTCsAndNormals(vector<GLfloat> &output, vector<glm::vec3> &verti
 		return;
 	}
 
-	for (int i = 0; i < vertices.size(); i++) {
+	for (int i = 0; i < vIndices.size(); i++) {
 
-		ptrdiff_t pos = find(vIndices.begin(), vIndices.end(), i) - vIndices.begin();
+		// ptrdiff_t pos = find(vIndices.begin(), vIndices.end(), i) - vIndices.begin();
 
-		output.push_back(vertices[i].x);
-		output.push_back(vertices[i].y);
-		output.push_back(vertices[i].z);
+		output.push_back(vertices[vIndices[i]].x);
+		output.push_back(vertices[vIndices[i]].y);
+		output.push_back(vertices[vIndices[i]].z);
 
-		output.push_back(texcoords[tcIndices[(int) pos]].x);
-		output.push_back(texcoords[tcIndices[(int) pos]].y);
+		output.push_back(texcoords[tcIndices[i]].x);
+		output.push_back(texcoords[tcIndices[i]].y);
 
-		output.push_back(normals[nIndices[(int) pos]].x);
-		output.push_back(normals[nIndices[(int) pos]].y);
-		output.push_back(normals[nIndices[(int) pos]].z);	
+		output.push_back(normals[nIndices[i]].x);
+		output.push_back(normals[nIndices[i]].y);
+		output.push_back(normals[nIndices[i]].z);	
 	}
+
+	// for (int i = 0; i < vertices.size(); i++) {
+
+	// 	ptrdiff_t pos = find(vIndices.begin(), vIndices.end(), i) - vIndices.begin();
+
+	// 	output.push_back(vertices[i].x);
+	// 	output.push_back(vertices[i].y);
+	// 	output.push_back(vertices[i].z);
+
+	// 	output.push_back(texcoords[tcIndices[(int) pos]].x);
+	// 	output.push_back(texcoords[tcIndices[(int) pos]].y);
+
+	// 	output.push_back(normals[nIndices[(int) pos]].x);
+	// 	output.push_back(normals[nIndices[(int) pos]].y);
+	// 	output.push_back(normals[nIndices[(int) pos]].z);	
+	// }
 }
 
 vector<Material*>* readMaterialsLibrary(stringstream &materialsLibrarySS) {
@@ -293,10 +309,6 @@ vector<Material*>* readMaterialsLibrary(stringstream &materialsLibrarySS) {
 				break;
 			}
 		}
-	}
-
-	for (auto v: *output) {
-		v->print();
 	}
 
 	return output; 
