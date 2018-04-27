@@ -309,6 +309,9 @@ vector<Material*>* readMaterialsLibrary(stringstream &materialsLibrarySS) {
 				output->at(index)->bumpMap = words[1];
 				break;
 			}
+			case NI: {
+				output->at(index)->Ni = atof(words[1].c_str());
+			}
 		}
 	}
 

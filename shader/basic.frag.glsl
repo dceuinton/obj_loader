@@ -40,10 +40,13 @@ void main() {
 	// View Vector
 	vec4 v = normalize(-frag_position);
 
+	vec4 Ka = texture(u_texture, texture_coordinates);
+
+	vec4 Kd = Ka;
+
 	// ---------- Calculate Terms ----------
 	// Ambient Term
-	// vec4 Ta = Ka * Ia;
-	vec4 Ta = texture(u_texture, texture_coordinates);
+	vec4 Ta = Ka * Ia;
 
 	// Diffuse Term
 	vec4 Td = Kd * max(dot(l, n), 0.0) * Id;
@@ -51,19 +54,5 @@ void main() {
 	// Specular Term
 	vec4 Ts = Ks * pow((max(dot(r, v), 0.0)), a) * Is;
 
-	// vec4 outputvec = Ta + Td + Ts;
-	// if (outputvec == vec4(0.0,0.0,0.0,0.0)) {
-	// 	frag_colour = vec4(0.7, 0.0, 0.0, 0.0);
-	// } else {
-	// 	frag_colour = outputvec;
-	// }
-
-	// frag_colour = Ta + Td + Ts;
-	// frag_colour = vec4(0.0, 0.0, 0.0, 0.0);
-
-	// frag_colour = vec4(texture_coordinates, 0.0, 0.0);
-	// frag_colour = texture(u_texture, texture_coordinates.xy);
-	// frag_colour = frag_normal;
-	// frag_colour = frag_normal; return;
 	frag_colour = Ta + Td + Ts;
 }
