@@ -42,7 +42,8 @@ void main() {
 
 	// ---------- Calculate Terms ----------
 	// Ambient Term
-	vec4 Ta = Ka * Ia;
+	// vec4 Ta = Ka * Ia;
+	vec4 Ta = texture(u_texture, texture_coordinates);
 
 	// Diffuse Term
 	vec4 Td = Kd * max(dot(l, n), 0.0) * Id;
@@ -62,5 +63,7 @@ void main() {
 
 	// frag_colour = vec4(texture_coordinates, 0.0, 0.0);
 	frag_colour = texture(u_texture, texture_coordinates.xy);
+	// frag_colour = frag_normal;
+	// frag_colour = frag_normal; return;
 	// frag_colour = Ta + Td + Ts;
 }

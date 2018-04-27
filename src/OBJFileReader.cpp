@@ -226,3 +226,69 @@ void sortVerticesTCsAndNormals(vector<GLfloat> &output, vector<glm::vec3> &verti
 		output.push_back(normals[nIndices[(int) pos]].z);	
 	}
 }
+
+vector<Material>* readMaterialsLibrary(stringstream &materialsLibrarySS) {
+	vector<Material>* output = new vector<Material>;
+	string line;
+	while (getline(materialsLibrarySS, line)) {
+		vector<string> words = getWords(line);
+		string identifier = words[0];
+		int mlCase = getMLCase(identifier);
+
+		switch(mlCase) {
+			case NEW_MTL: {
+
+			}
+			case KD: {
+
+			}
+			case KA: {
+
+			}
+			case KS: {
+
+			}
+			case MAP_KD: {
+
+			}
+			case MAP_KS: {
+
+			}
+			case BUMP_MAP: {
+				
+			}
+		}
+	}
+
+	return output; 
+}
+
+int getMLCase(string &identifier) {
+	int output = -1;
+
+	if (identifier.compare("newmtl") == 0) {
+		output = NEW_MTL;
+	} else if (identifier.compare("illum") == 0) {
+		output = ILLUM;
+	} else if (identifier.compare("Kd") == 0) {
+		output = KD;
+	} else if (identifier.compare("Ka") == 0) {
+		output = KA;
+	} else if (identifier.compare("Tf") == 0) {
+		output = TF;
+	} else if (identifier.compare("map_Kd") == 0) {
+		output = MAP_KD;
+	} else if (identifier.compare("bump") == 0) {
+		output = BUMP_MAP;
+	} else if (identifier.compare("Ni") == 0) {
+		output = NI;
+	} else if (identifier.compare("Ks") == 0) {
+		output = KS;
+	} else if (identifier.compare("map_Ks") == 0) {
+		output = MAP_KS;
+	} else {
+		// cout << "Unknown: " << identifier << endl;
+	}
+
+	return output;
+}

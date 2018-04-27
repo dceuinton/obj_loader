@@ -29,6 +29,30 @@ const int FACE = 6;
 const int MATERIAL_LIBRARY = 7;
 const int USE_MTL = 9;
 
+const int NEW_MTL = 10;
+const int ILLUM = 11;
+const int KD = 12;
+const int KA = 13;
+const int KS = 14;
+const int TF = 15;
+const int MAP_KD = 16;
+const int BUMP_MAP = 17;
+const int NI = 18;
+const int MAP_KS = 19;
+
+
+
+struct Material {
+	string name;
+	glm::vec4 Ka;
+	glm::vec4 Kd;
+	glm::vec4 Ks;
+	string diffuse_map;
+	GLuint diffuse_tex;
+	string bump_map;
+	GLuint bump_tex;
+};
+
 void printVec(vector<glm::vec3> &vec);
 void printVec(vector<glm::vec2> &vec);
 void printVec(vector<string> &vec);
@@ -48,5 +72,7 @@ vector<GLuint> seperateFaceIndices(string &word);
 void getFaceIndices(vector<string> &faceWords, vector<GLuint> &vIndices, vector<GLuint> &vTexCoords, vector<GLuint> &vNormals);
 void sortVerticesTCsAndNormals(vector<GLfloat> &output, vector<glm::vec3> &vertices, vector<glm::vec2> &texcoords, vector<glm::vec3> &normals,
 								vector<GLuint> &vIndices, vector<GLuint> &tcIndices, vector<GLuint> &nIndices);
+vector<Material>* readMaterialsLibrary(stringstream &materialsLibrarySS);
+int getMLCase(string &identifier);
 
 #endif

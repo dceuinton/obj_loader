@@ -33,6 +33,17 @@ double currentTime;
 double previousTime;
 double elapsedTime;
 
+struct Material {
+	string name;
+	glm::vec4 Ka;
+	glm::vec4 Kd;
+	glm::vec4 Ks;
+	string diffuse_map;
+	GLuint diffuse_tex;
+	string bump_map;
+	GLuint bump_tex;
+};
+
 // ----------------------------------------------------------------------------------------
 
 // Called on Error Event
@@ -65,22 +76,22 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		if (key == GLFW_KEY_ESCAPE) {
 			glfwSetWindowShouldClose(window, 1);
 		}
-		if (key == GLFW_KEY_W) {vcam.moveForwards(elapsedTime * cameraSpeed);}
-		if (key == GLFW_KEY_A) {vcam.moveLeft(elapsedTime * cameraSpeed);}
-		if (key == GLFW_KEY_S) {vcam.moveBackwards(elapsedTime * cameraSpeed);}
-		if (key == GLFW_KEY_D) {vcam.moveRight(elapsedTime * cameraSpeed);}
-		if (key == GLFW_KEY_LEFT) {vcam.lookLeft(elapsedTime * rps);}
-		if (key == GLFW_KEY_RIGHT) {vcam.lookRight(elapsedTime * rps);}
-		if (key == GLFW_KEY_UP) {vcam.lookUp(elapsedTime * rps);}
-		if (key == GLFW_KEY_DOWN) {vcam.lookDown(elapsedTime * rps);}
-		if (key == GLFW_KEY_R) {vcam.moveUp(elapsedTime * cameraSpeed);}
-		if (key == GLFW_KEY_F) {vcam.moveDown(elapsedTime * cameraSpeed);}
+		// if (key == GLFW_KEY_W) {vcam.moveForwards(elapsedTime * cameraSpeed);}
+		// if (key == GLFW_KEY_A) {vcam.moveLeft(elapsedTime * cameraSpeed);}
+		// if (key == GLFW_KEY_S) {vcam.moveBackwards(elapsedTime * cameraSpeed);}
+		// if (key == GLFW_KEY_D) {vcam.moveRight(elapsedTime * cameraSpeed);}
+		// if (key == GLFW_KEY_LEFT) {vcam.lookLeft(elapsedTime * rps);}
+		// if (key == GLFW_KEY_RIGHT) {vcam.lookRight(elapsedTime * rps);}
+		// if (key == GLFW_KEY_UP) {vcam.lookUp(elapsedTime * rps);}
+		// if (key == GLFW_KEY_DOWN) {vcam.lookDown(elapsedTime * rps);}
+		// if (key == GLFW_KEY_R) {vcam.moveUp(elapsedTime * cameraSpeed);}
+		// if (key == GLFW_KEY_F) {vcam.moveDown(elapsedTime * cameraSpeed);}
 		if (key == GLFW_KEY_P) {vcam.printPosition();}
 
-		if (key == GLFW_KEY_J) {modelMatController.lookLeft(elapsedTime * rps);}
-		if (key == GLFW_KEY_L) {modelMatController.lookRight(elapsedTime * rps);}
-		if (key == GLFW_KEY_I) {modelMatController.lookUp(elapsedTime * rps);}
-		if (key == GLFW_KEY_K) {modelMatController.lookDown(elapsedTime * rps);}
+		// if (key == GLFW_KEY_J) {modelMatController.lookLeft(elapsedTime * rps);}
+		// if (key == GLFW_KEY_L) {modelMatController.lookRight(elapsedTime * rps);}
+		// if (key == GLFW_KEY_I) {modelMatController.lookUp(elapsedTime * rps);}
+		// if (key == GLFW_KEY_K) {modelMatController.lookDown(elapsedTime * rps);}
 	}
 }
 
@@ -91,7 +102,9 @@ int main() {
 	// // const char *filename = "test.obj";
 	const char *filename = "old_man/muro.obj";
 	stringstream *file = readFileIntoBuffer(filename);
+	stringstream *materialLibrary;
 	
+	string folderWithOBJ = "./old_man/";
 	string line;
 	vector<glm::vec3> vertices, normals;
 	vector<glm::vec2> texturecoords;
@@ -167,12 +180,21 @@ int main() {
 			}
 			break;
 
-			case MATERIAL_LIBRARY:
-			mtl++;
+			case MATERIAL_LIBRARY: {
+				mtl++;
+				vector<string> words = getWords(line);
+				printVec(words);
+				string filename = folderWithOBJ + words[1];
+				materialLibrary = readFileIntoBuffer(filename.c_str());
+				
+			}
+			
 			break;
 
-			case USE_MTL:
-			usemtls++;
+			case USE_MTL: {
+				usemtls++;
+
+			}
 			break;
 
 			case -1:
@@ -182,22 +204,22 @@ int main() {
 	}
 	// vertexFile.close();
 
-	cout << "Comments: " << coms << endl;
-	cout << "Groups: " << gs << endl;
-	cout << "Shading groups: " << sgs << endl;
-	cout << "Vertices: " << vs << endl;
-	cout << "Tex Coords: " << vts << endl;
-	cout << "Normals: " << vns << endl;
-	cout << "Faces: " << fs << endl;
-	cout << "Material libraries: " << mtl << endl;
-	cout << "Use materials: " << usemtls << endl;
-	cout << "Unknown: " << unknown << endl;
+	// cout << "Comments: " << coms << endl;
+	// cout << "Groups: " << gs << endl;
+	// cout << "Shading groups: " << sgs << endl;
+	// cout << "Vertices: " << vs << endl;
+	// cout << "Tex Coords: " << vts << endl;
+	// cout << "Normals: " << vns << endl;
+	// cout << "Faces: " << fs << endl;
+	// cout << "Material libraries: " << mtl << endl;
+	// cout << "Use materials: " << usemtls << endl;
+	// cout << "Unknown: " << unknown << endl;
 
-	cout << endl;
-	cout << "Size: " << vertices.size() <<endl;
-	cout << "vIndices Size: " << indices.size() <<endl;
-	cout << "vTexCoords Size: " << vTC.size() <<endl;
-	cout << "vNormals Size: " << vNormals.size() <<endl;
+	// cout << endl;
+	// cout << "Size: " << vertices.size() <<endl;
+	// cout << "vIndices Size: " << indices.size() <<endl;
+	// cout << "vTexCoords Size: " << vTC.size() <<endl;
+	// cout << "vNormals Size: " << vNormals.size() <<endl;
 
 	// ------------------------------------------------------------
 
@@ -205,8 +227,11 @@ int main() {
 	// cout << "Position of 0 is : " << pos << endl;
 	// cout << indices.at(456) << endl;
 
-
-
+	string readbufferthing;
+	while (getline(*materialLibrary, readbufferthing)) {
+		cout << "A line: " << readbufferthing << endl;
+	}
+	
 
 	// ------------------------------------------------------------
 
@@ -333,12 +358,6 @@ int main() {
 	// ------------------------------------------------------------
 	// ------------------------------------------------------------
 
-	
-
-	GLuint texture;
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
-
 	int x, y, random;
 	unsigned char *image = loadImage("./old_man/Muro_head_dm.tga", x, y, random);
 
@@ -346,14 +365,23 @@ int main() {
 		cout << "ERROR" << endl;
 		return 0;
 	}
+
+	GLuint texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
 	
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // No mip-mapping
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // No mip-mapping
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); // No mip-mapping
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	// Configure Texture Coordinate Wrapping
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP_TO_EDGE);
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_REPEAT);
+	// glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_REPEAT);
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -361,12 +389,45 @@ int main() {
 	delete[] image;
 	image = NULL;
 
-
+	cout << "Texture: " << texture << endl;
 	// ------------------------------------------------------------
 	// ------------------------------------------------------------
 	// ------------------------------------------------------------
+	int jkl = 0;
+	while (jkl < fullVertices.size()) {
+		if (fullVertices[jkl] < 0.0 && fullVertices[jkl] > -1.4) {
+			if (fullVertices[jkl+2] > 160) {
+				// if (fullVertices[jkl+2] < 0) {
+					cout << "Vertex" << endl;
+					cout << fullVertices[jkl] << " "
+					<< fullVertices[jkl+1] << " "
+					<< fullVertices[jkl+2]<< " "
+					// << fullVertices[jkl+3]<< " "
+					// << fullVertices[jkl+4]<< " "
+					// << fullVertices[jkl+5]<< " "
+					// << fullVertices[jkl+6]<< " "
+					/*<< fullVertices[jkl+7]*/ << endl;;
+				// }
+			}
+		}
+// if (fullVertices[jkl+3] < 0.52 && fullVertices[jkl+3] > 0.48) {
+// 			if (fullVertices[jkl+4] < 0.52 && fullVertices[jkl+4] > 0.48) {
+// 				if (fullVertices[jkl+2] < 0) {
+// 					cout << "Vertex" << endl;
+// 					cout << fullVertices[jkl] << " "
+// 					<< fullVertices[jkl+1] << " "
+// 					<< fullVertices[jkl+2]<< " "
+// 					// << fullVertices[jkl+3]<< " "
+// 					// << fullVertices[jkl+4]<< " "
+// 					// << fullVertices[jkl+5]<< " "
+// 					// << fullVertices[jkl+6]<< " "
+// 					/*<< fullVertices[jkl+7]*/ << endl;;
+// 				}
+// 			}
+// 		}
 
-
+		jkl += 8;
+	}
 
 
 	glBindVertexArray(0);
@@ -393,7 +454,7 @@ int main() {
 	GLint viewLoc = glGetUniformLocation(basicProgram, "u_view");
 	// glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(viewMat));
 
-	glm::vec3 initialPos = glm::vec3(0.0f, 117.486, 145.673);
+	glm::vec3 initialPos = glm::vec3(0.0f, 165.5, 30.5);
 	vcam.setPosition(initialPos);
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(*vcam.getInverseViewMatrix()));
 	
@@ -418,6 +479,7 @@ int main() {
 	int counter = 3;
 
 	while (!glfwWindowShouldClose(window)) {
+		float cameraSpeed = 100.0f;
 
 		currentTime = glfwGetTime();
 		elapsedTime = currentTime - previousTime;
@@ -436,9 +498,10 @@ int main() {
 		glBindTexture(GL_TEXTURE_2D, texture);
 
 		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(*vcam.getInverseViewMatrix()));
-		// glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(*modelMatController.getViewMatrix()));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(*modelMatController.getViewMatrix()));
 
-		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, NULL);
+		// glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, NULL);
+		glDrawElements(GL_LINES, indices.size(), GL_UNSIGNED_INT, NULL);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -446,9 +509,38 @@ int main() {
 		if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_N) == GLFW_REPEAT) {
 			modelMatController.lookLeft(elapsedTime*PI);
 		}
-
 		if (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_N) == GLFW_REPEAT) {
 			modelMatController.lookRight(elapsedTime*PI);
+		}
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_N) == GLFW_REPEAT) {
+			vcam.moveForwards(elapsedTime*cameraSpeed);
+		}
+		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_N) == GLFW_REPEAT) {
+			vcam.moveBackwards(elapsedTime*cameraSpeed);
+		}
+		if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_N) == GLFW_REPEAT) {
+			vcam.moveUp(elapsedTime*cameraSpeed);
+		}
+		if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_N) == GLFW_REPEAT) {
+			vcam.moveDown(elapsedTime*cameraSpeed);
+		}
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_N) == GLFW_REPEAT) {
+			vcam.moveLeft(elapsedTime*cameraSpeed);
+		}
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_N) == GLFW_REPEAT) {
+			vcam.moveRight(elapsedTime*cameraSpeed);
+		}
+		if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_N) == GLFW_REPEAT) {
+			vcam.lookUp(elapsedTime*PI);
+		}
+		if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_N) == GLFW_REPEAT) {
+			vcam.lookDown(elapsedTime*PI);
+		}
+		if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_N) == GLFW_REPEAT) {
+			vcam.lookLeft(elapsedTime*PI);
+		}
+		if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_N) == GLFW_REPEAT) {
+			vcam.lookRight(elapsedTime*PI);
 		}
 		// glDrawElements(GL_LINES, indices.size() * 3, GL_UNSIGNED_INT, NULL);
 		// glDrawElements(GL_TRIANGLES, testIndicesSize, GL_UNSIGNED_INT, NULL);
