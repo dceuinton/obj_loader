@@ -1,8 +1,6 @@
 // Assignment number 2, 159.709, 2018 S1
 // Euinton, Dale, 14026002,
-// This program loads up the obj file muro.obj unless specified in the arguments in the terminal. 
-// Should one want to load another object, they should run the program with the path to the folder 
-// as the first argument and the obj file in the folder as the second argument. 
+// This program loads up the obj file muro.obj using phong lighting model. 
 
 // MOVEMENT 
 // J - rotate the object left
@@ -113,8 +111,6 @@ void bindAndSetBuffers(GLObject *object) {
 
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	cout << "Made it to the end of bindAndSetBuffers" << endl;
 }
 
 void loadAndBindOneTexture(string texname, GLuint &tex) {
@@ -160,11 +156,10 @@ void loadAndBindObjectTextures(GLObject *object) {
 		loadAndBindOneTexture(object->material->specularMap, object->material->specularTex);
 
 	}
-	cout << "Made it to the end of loadAndBindObjectTextures" << endl;
 }
 
 void setUniforms(GLObject *object) {
-	cout << "Shader program number " << object->sp << endl;
+	// cout << "Shader program number " << object->sp << endl;
 
 	glUseProgram(object->sp);
 
@@ -187,83 +182,51 @@ void setUniforms(GLObject *object) {
 	glUniform1i(specMapLoc, 0);
 
 	GLuint useTexLoc = glGetUniformLocation(object->sp, "useTexture");	
-	cout << endl;
-	cout << object->materialName << endl;
-	cout << object->material->diffuseMap << " length: " << object->material->diffuseMap.length() << endl;
-	cout << endl;
 	int useTexValue = 0;
-	if (object->material->diffuseMap.length() == 0) {
-		cout << "NO TEX" << endl;
-		// glUniform1i(useTexLoc, 0);
-		useTexValue = 0;
-	} else {
-		cout << "Use the texture" << endl;
-		// glUniform1i(useTexLoc, 1);	
+	if (object->material->diffuseMap.length() != 0) {
 		useTexValue = 1;
-	}
-
+	} 
 	glUniform1i(useTexLoc, useTexValue);
 
-
-	GLuint useSpecLoc = glGetAttribLocation(object->sp, "useSpecMap");	
-	// cout << endl;
-	// cout << object->materialName << endl;
-	// cout << object->material->specularMap << " length: " << object->material->specularMap.length() << endl;
-	// cout << endl;
+	GLuint useSpecLoc = glGetUniformLocation(object->sp, "useSpecMap");	
+	// GLuint useSpecLoc = glGetAttribLocation(object->sp, "useSpecMap");	
 	if (object->material->specularMap.length() == 0) {
-		// cout << "True" << endl;
 		glUniform1i(useSpecLoc, 0);
 	} else {
-		// cout << "False" << endl;
 		glUniform1i(useSpecLoc, 1);
 	}
 
 	if (object->material != NULL) {
-
-		cout << endl;
-		cout << object->materialName << endl;
-		cout << "HERE IT IS -------------" << endl;
-		cout << endl;
-
 		glm::vec4 vector;
 
 		vector = object->material->Ka;
 		GLuint kaLoc = glGetUniformLocation(object->sp, "Ka");
-		// glUniform4fv(kaLoc, 3, glm::value_ptr(object->material->Ka));
 		glUniform4f(kaLoc, vector.x, vector.y, vector.z, vector.w);
 
-		cout << glm::to_string(vector) << endl;
+		// cout << glm::to_string(vector) << endl;
 
 		vector = object->material->Kd;
 		GLuint kdLoc = glGetUniformLocation(object->sp, "Kd");
-		// glUniform4fv(kdLoc, 3, glm::value_ptr(object->material->Kd));
 		glUniform4f(kdLoc, vector.x, vector.y, vector.z, vector.w);
 
-		cout << glm::to_string(vector) << endl;
+		// cout << glm::to_string(vector) << endl;
 
 		vector = object->material->Ks;
 		GLuint ksLoc = glGetUniformLocation(object->sp, "Ks");
-		// glUniformMatrix4fv(ksLoc, 1, GL_FALSE, glm::value_ptr(object->material->Ks));
-		// glUniform4f(ksLoc, object->material->Ks.x, object->material->Ks.y, object->material->Ks.z, object->material->Ks.w);
 		glUniform4f(ksLoc, vector.x, vector.y, vector.z, vector.w);
 
-		cout << glm::to_string(vector) << endl;
+		// cout << glm::to_string(vector) << endl;
 
 		GLuint niLoc = glGetUniformLocation(object->sp, "a");
 		glUniform1f(niLoc, object->material->Ns);
 	}
 
 	glUseProgram(0);
-	cout << "Made it to the end of setUniforms" << endl;
 }
 
 void draw(GLObject *object) {
-	// cout << "Printing! " << endl;
-	// printVec(object->vertices);
 	glUseProgram(object->sp);
 	glBindVertexArray(object->vao);
-
-	
 
 	if (object->material->diffuseTex != 0) {
 		glActiveTexture(GL_TEXTURE0);
@@ -359,23 +322,7 @@ void loadObject() {
 				string filename = folderWithOBJ + words[1];
 				cout << filename << endl;
 				string testing;
-				// ifstream checkFile(filename);
-				// cout << "Exists: " << checkFile.good() <<endl;
-				// getline(checkFile, testing);
-				// cout << testing << endl;
-				// getline(checkFile, testing);
-				// cout << testing << endl;
-				// getline(checkFile, testing);
-				// cout << testing << endl;
-				// getline(checkFile, testing);
-				// cout << testing << endl;
-				// getline(checkFile, testing);
-				// cout << testing << endl;
-				// checkFile.close();
-				// const char* realFileName = filename.c_str();
-				// materialLibrary = readFileIntoBuffer(realFileName);
 				materialLibrary = readFileIntoBuffer(filename.c_str());
-				// materialLibrary = readFileIntoBuffer("./Baymax/Bigmax_White_OBJ.mtl");
 				materials = readMaterialsLibrary(*materialLibrary);				
 			}
 			
@@ -384,7 +331,7 @@ void loadObject() {
 			case USE_MTL: {
 				GLObject *object = new GLObject();
 				vector<string> words = getWords(line);
-				cout << words[1] << endl;
+				// cout << words[1] << endl;
 				object->materialName = words[1];
 				objects->push_back(object);
 				break;
@@ -398,25 +345,13 @@ void loadObject() {
 	file = NULL;
 	delete materialLibrary;
 	materialLibrary = NULL;
-
-	cout << "Made it past the file loading!" << endl;
-	cout << "Objects has: " << objects->size() << endl;
-	cout << "Materials has: " << materials->size() << endl;
-
-	if (materials->size() == 3) {
-		Material* mat = materials->back();
-		cout << mat->name << endl;
-		cout << "Kd: " << glm::to_string(mat->Kd) << endl;
-		cout << "Ka: " << glm::to_string(mat->Ka) << endl;
-		cout << "Ks: " << glm::to_string(mat->Ks) << endl;
-	}
 	
 	// Get the materials for each object
 	for (auto o: *objects) {
 		string material = o->materialName;
 		for (auto m: *materials) {
 			if (m->name.compare(material) == 0) {
-				cout << "Matched " << m->name << endl;
+				// cout << "Matched " << m->name << endl;
 				o->material = m;
 			}
 		}
@@ -446,21 +381,13 @@ void loadObject() {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 
-	// printVec(vertices);
-	// cout << "Size: " << vertices.size() << endl;
-
-	// sortVerticesTCsAndNormals(objects->back()->vertices, vertices, texturecoords, normals, objects->back()->vIndices, objects->back()->tcIndices, objects->back()->nIndices);
-
 	for (GLObject* o: *objects) {
 		cout << o->materialName << endl;
 		sortVerticesTCsAndNormals(o->vertices, vertices, texturecoords, normals, o->vIndices, o->tcIndices, o->nIndices);
-		cout << "Got past sort vertices and normals" << endl;
 		bindAndSetBuffers(o);
 		loadAndBindObjectTextures(o);
 		setUniforms(o);
 	}
-
-	cout << "Made it to after object initialisation" << endl;
 
 	currentTime = 0.0;
 	previousTime = glfwGetTime();
@@ -471,7 +398,6 @@ void loadObject() {
 
 	while (!glfwWindowShouldClose(window)) {
 
-		// cout << "Window starting soon" <<endl;
 		float cameraSpeed = 100.0f;
 
 		currentTime = glfwGetTime();

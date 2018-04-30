@@ -268,7 +268,7 @@ void sortVerticesTCsAndNormals(vector<GLfloat> &output, vector<glm::vec3> &verti
 
 vector<Material*>* readMaterialsLibrary(stringstream &materialsLibrarySS) {
 
-	cout << "Read materials! " << endl;
+	// cout << "Read materials! " << endl;
 
 	vector<Material*> *output = new vector<Material*>;
 	string line;
@@ -277,11 +277,6 @@ vector<Material*>* readMaterialsLibrary(stringstream &materialsLibrarySS) {
 		vector<string> words = getWords(line);
 		string identifier = words[0];
 		int mlCase = getMLCase(identifier);
-		
-		// cout << line << endl;
-
-		// cout << "Beginning" << endl;
-		// printVec(words);
 
 		switch(mlCase) {
 			case NEW_MTL: {
@@ -290,7 +285,7 @@ vector<Material*>* readMaterialsLibrary(stringstream &materialsLibrarySS) {
 				Material *another = new Material();
 				output->push_back(another);
 				output->at(index)->name = words[1];
-				cout << "Materials: " << output->back()->name << endl;
+				// cout << "Materials: " << output->back()->name << endl;
 				break;
 			}
 			case KD: {
