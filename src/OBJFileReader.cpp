@@ -235,7 +235,7 @@ void sortVerticesTCsAndNormals(vector<GLfloat> &output, vector<glm::vec3> &verti
 	for (int i = 0; i < vIndices.size(); i++) {
 
 		// ptrdiff_t pos = find(vIndices.begin(), vIndices.end(), i) - vIndices.begin();
-		cout << "Run: " << i << endl;
+		// cout << "Run: " << i << endl;
 
 		output.push_back(vertices[vIndices[i]].x);
 		output.push_back(vertices[vIndices[i]].y);
@@ -278,7 +278,7 @@ vector<Material*>* readMaterialsLibrary(stringstream &materialsLibrarySS) {
 		string identifier = words[0];
 		int mlCase = getMLCase(identifier);
 		
-		cout << line << endl;
+		// cout << line << endl;
 
 		// cout << "Beginning" << endl;
 		// printVec(words);
@@ -290,6 +290,7 @@ vector<Material*>* readMaterialsLibrary(stringstream &materialsLibrarySS) {
 				Material *another = new Material();
 				output->push_back(another);
 				output->at(index)->name = words[1];
+				cout << "Materials: " << output->back()->name << endl;
 				break;
 			}
 			case KD: {
@@ -335,8 +336,8 @@ vector<Material*>* readMaterialsLibrary(stringstream &materialsLibrarySS) {
 				output->at(index)->bumpMap = words[1];
 				break;
 			}
-			case NI: {
-				output->at(index)->Ni = atof(words[1].c_str());
+			case NS: {
+				output->at(index)->Ns = atof(words[1].c_str());
 			}
 		}
 	}
@@ -361,8 +362,8 @@ int getMLCase(string &identifier) {
 		output = MAP_KD;
 	} else if (identifier.compare("bump") == 0) {
 		output = BUMP_MAP;
-	} else if (identifier.compare("Ni") == 0) {
-		output = NI;
+	} else if (identifier.compare("Ns") == 0) {
+		output = NS;
 	} else if (identifier.compare("Ks") == 0) {
 		output = KS;
 	} else if (identifier.compare("map_Ks") == 0) {

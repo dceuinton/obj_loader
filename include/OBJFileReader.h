@@ -37,7 +37,7 @@ const int KS = 14;
 const int TF = 15;
 const int MAP_KD = 16;
 const int BUMP_MAP = 17;
-const int NI = 18;
+const int NS = 18;
 const int MAP_KS = 19;
 
 
@@ -47,7 +47,7 @@ struct Material {
 	glm::vec4 Ka;
 	glm::vec4 Kd;
 	glm::vec4 Ks;
-	GLfloat Ni;
+	GLfloat Ns;
 	string diffuseMap;
 	GLuint diffuseTex;
 	string bumpMap;
